@@ -1,0 +1,98 @@
+---
+title: "Using Machine Learning Techniques to Predict Performance of Barbell Lifts"
+author: "Anton"
+date: "21 June 2015"
+output: html_document
+---
+
+## Synopsis
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this paper, our goal will be to use data from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants to predict if barbell lifts are done correctly and incorrectly in 5 different ways. 
+
+## Data Processing
+
+### Loading
+
+We first download the raw data files and load them into R:
+```{r cache=T,echo=F}
+filename = "training.csv"
+url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+if(file.exists(filename) == FALSE) {
+    download.file(url, filename, method="curl")
+}
+training = read.csv(filename)
+
+filename = "testing.csv"
+url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+if(file.exists(filename) == FALSE) {
+    download.file(url, filename, method="curl")
+}
+testing = read.csv(filename)
+```
+
+### Subsetting
+
+While exploring the data set, we observe that a large number of columns have NA values on most lines, and that the data set is aggregated into "windows". There is also data which is generally not of interest in the scope of future predictions, such as subject name and timestamps. Thus we subset it to exclude such columns and aggregations:
+
+```{r cache=T}
+predict_cols = grep("^(gyros|total_accel|accel|magnet|roll|pitch|yaw)",colnames(training),value=T)
+training_clean = subset(training[testing$new_window=='no'],select=c(predict_cols,'classe'))
+```
+
+We now split the clean training data into two portions used for training and validation. Since the number of observations is quite big, we'll use 50% for each:
+
+```{r cache=T,echo=F}
+library(caret)
+set.seed(111)
+train = createDataPartition(training_clean$classe, p=0.5, list=F)
+t = training_clean[train,]
+v = training_clean[-train,]
+```
+
+### Fitting the Model
+
+We select a random forest learner for this classification task as it uses out of bag samples and they perform cross validation during learning. 
+
+But random forests are sensitive to correlated predictors, so lets check the correlation matrix before we train our model:
+
+```{r cache=T}
+cm = cor(subset(t,select=-classe))
+diag(cm) = 0
+cm = abs(cm)
+library(lattice)
+levelplot(cm)
+```
+
+We can see that there are a few correlated pairs, but majority of variables are not strongly correlated. Lets train the random forest model:
+
+```{r cache=T,echo=F}
+library(doParallel)
+cl = makeCluster(detectCores())
+registerDoParallel(cl)
+fit = randomForest(classe~., t) 
+stopCluster(cl)
+```
+The model has a low out of bag error rate estimate of 0.96%:
+```{r cache=T,echo=F}
+fit
+```
+
+### Cross Validation
+
+Lets now use the validation data set to get the final accuracy estimate for the model:
+```{r cache=T}
+confusionMatrix(predict(fit,v),v$classe)
+```
+
+This model shows a high prediction accuracy (99.2%) and low error (as estimated), so we can use it for predicting on the unseen data.
+
+### Predicting
+
+Final predictions on test data set:
+```{r cache=T}
+predict(fit, testing)
+```
+
+## Conclusions
+
+Using this data set and random forests technique, we've managed to build a very accurate prediction of barbell lifts performance. This approach can be used to create applications that assist in weight training by identifying problems in performing the exercise and guiding the user to a correct exercise method. 
