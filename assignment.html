@@ -119,7 +119,7 @@ cl = makeCluster(detectCores())
 registerDoParallel(cl)
 fit = randomForest(classe~., t) 
 stopCluster(cl)</code></pre>
-<p>The model has a low out of bag error rate estimate of 0.96%:</p>
+<p>The model has a low out of bag error rate estimate of 0.99%:</p>
 <pre class="r"><code>fit</code></pre>
 <pre><code>## 
 ## Call:

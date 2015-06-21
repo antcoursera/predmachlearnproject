@@ -72,7 +72,7 @@ registerDoParallel(cl)
 fit = randomForest(classe~., t) 
 stopCluster(cl)
 ```
-The model has a low out of bag error rate estimate of 0.96%:
+The model has a low out of bag error rate estimate of 0.99%:
 ```{r cache=T}
 fit
 ```
