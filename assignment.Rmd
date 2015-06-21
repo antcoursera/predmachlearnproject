@@ -14,7 +14,7 @@ Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible t
 ### Loading
 
 We first download the raw data files and load them into R:
-```{r cache=T,echo=F}
+```{r cache=T}
 filename = "training.csv"
 url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 if(file.exists(filename) == FALSE) {
@@ -41,7 +41,7 @@ training_clean = subset(training[testing$new_window=='no'],select=c(predict_cols
 
 We now split the clean training data into two portions used for training and validation. Since the number of observations is quite big, we'll use 50% for each:
 
-```{r cache=T,echo=F}
+```{r cache=T}
 library(caret)
 set.seed(111)
 train = createDataPartition(training_clean$classe, p=0.5, list=F)
@@ -65,7 +65,7 @@ levelplot(cm)
 
 We can see that there are a few correlated pairs, but majority of variables are not strongly correlated. Lets train the random forest model:
 
-```{r cache=T,echo=F}
+```{r cache=T}
 library(doParallel)
 cl = makeCluster(detectCores())
 registerDoParallel(cl)
@@ -73,7 +73,7 @@ fit = randomForest(classe~., t)
 stopCluster(cl)
 ```
 The model has a low out of bag error rate estimate of 0.96%:
-```{r cache=T,echo=F}
+```{r cache=T}
 fit
 ```
 
